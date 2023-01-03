@@ -3,32 +3,35 @@ using System.Reflection;
 
 namespace CommonCore
 {
+    /// <summary>
+    /// Returns the string decription for an enum value which has been decorated with the DescriptionAttribute attribute
+    /// </summary>
+    /// <usage>
+    /// MyEnum x = MyEnum.Foo;
+    /// string description = x.GetDescription();
+    /// </usage>
     public static class EnumExtensions
     {
-        public static string GetDescription<T>(this T enumerationValue)
-            where T : struct
+        public static string? GetDescription(this Enum value)
         {
-            Type type = enumerationValue.GetType();
-            if (!type.IsEnum)
+            Type? type = value.GetType();
+            string? name = Enum.GetName(type, value);
+            if (name != null)
             {
-                throw new ArgumentException("EnumerationValue must be of Enum type", "enumerationValue");
-            }
-
-            //Tries to find a DescriptionAttribute for a potential friendly name
-            //for the enum
-            MemberInfo[] memberInfo = type.GetMember(enumerationValue.ToString());
-            if (memberInfo != null && memberInfo.Length > 0)
-            {
-                object[] attrs = memberInfo[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
-
-                if (attrs != null && attrs.Length > 0)
+                FieldInfo? field = type.GetField(name);
+                if (field != null)
                 {
-                    //Pull out the description value
-                    return ((DescriptionAttribute)attrs[0]).Description;
+                    DescriptionAttribute? attr =
+                           Attribute.GetCustomAttribute(field,
+                             typeof(DescriptionAttribute)) as DescriptionAttribute;
+                    if (attr != null)
+                    {
+                        return attr.Description;
+                    }
                 }
             }
-            //If we have no description attribute, just return the ToString of the enum
-            return enumerationValue.ToString();
+
+            return null;
         }
     }
 }
